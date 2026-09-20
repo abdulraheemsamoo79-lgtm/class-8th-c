@@ -1,0 +1,9 @@
+{
+  "name": "Class Notes Hub",
+  "short_name": "Class Notes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#1f3a8a",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
