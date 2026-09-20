@@ -32,10 +32,10 @@ export function fmtDate(d) {
 
 export function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'abhi abhi';
-  if (s < 3600) return Math.floor(s / 60) + ' min pehle';
-  if (s < 86400) return Math.floor(s / 3600) + ' ghante pehle';
-  if (s < 86400 * 30) return Math.floor(s / 86400) + ' din pehle';
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + ' min ago';
+  if (s < 86400) return Math.floor(s / 3600) + ' hr ago';
+  if (s < 86400 * 30) return Math.floor(s / 86400) + ' days ago';
   return fmtDate(iso.slice(0, 10));
 }
 
@@ -57,16 +57,16 @@ export function saveBlob(blob, name) {
 
 export function friendlyError(e) {
   const m = String(e?.message || e || '').toLowerCase();
-  if (m.includes('invalid login')) return 'Email ya password galat hai.';
-  if (m.includes('already registered') || m.includes('already been registered')) return 'Ye email pehle se register hai. Login karo.';
-  if (m.includes('email not confirmed')) return 'Pehle apna email verify karo (inbox check karo).';
-  if (m.includes('database error saving new user')) return 'Signup nahi hui. Class code galat ho sakta hai.';
-  if (m.includes('at least') && m.includes('character')) return 'Password kam az kam 6 characters ka rakho.';
-  if (m.includes('rate limit') || m.includes('too many')) return 'Bohat zyada koshish ho gayi. Thodi der baad try karo.';
-  if (m.includes('failed to fetch') || m.includes('network') || m.includes('load failed')) return 'Internet nahi chal raha. Check karke dobara try karo.';
-  if (m.includes('row-level security') || m.includes('permission denied')) return 'Ye karne ki ijazat nahi hai (account block ho sakta hai).';
-  if (e?.code === '23505') return 'Ye pehle hi ho chuka hai.';
-  return 'Kuch masla ho gaya. Dobara try karo.';
+  if (m.includes('invalid login')) return 'Wrong email or password.';
+  if (m.includes('already registered') || m.includes('already been registered')) return 'This email is already registered. Please log in.';
+  if (m.includes('email not confirmed')) return 'Please verify your email first (check your inbox).';
+  if (m.includes('database error saving new user')) return 'Sign up failed. The class code may be wrong.';
+  if (m.includes('at least') && m.includes('character')) return 'Password must be at least 6 characters.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Too many attempts. Please try again in a while.';
+  if (m.includes('failed to fetch') || m.includes('network') || m.includes('load failed')) return 'No internet connection. Please check and try again.';
+  if (m.includes('row-level security') || m.includes('permission denied')) return 'You are not allowed to do this (your account may be blocked).';
+  if (e?.code === '23505') return 'This has already been done.';
+  return 'Something went wrong. Please try again.';
 }
 
 /* ---------- Sheet (popup) ---------- */
@@ -97,7 +97,7 @@ export function sheet(html) {
 }
 
 /* ---------- Confirm / input dialog ---------- */
-export function ask({ title, message = '', ok = 'Theek hai', cancel = 'Cancel', danger = false, input = null }) {
+export function ask({ title, message = '', ok = 'OK', cancel = 'Cancel', danger = false, input = null }) {
   return new Promise(resolve => {
     let field = '';
     if (input) {
@@ -122,7 +122,7 @@ export function ask({ title, message = '', ok = 'Theek hai', cancel = 'Cancel', 
     s.el.querySelector('#askYes').onclick = () => {
       if (input) {
         const v = inp.value.trim();
-        if (input.required && !v) { s.el.querySelector('#askErr').textContent = 'Ye likhna zaroori hai.'; return; }
+        if (input.required && !v) { s.el.querySelector('#askErr').textContent = 'This field is required.'; return; }
         finish(v);
       } else finish(true);
     };

@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 
-export const configured = !String(CONFIG.SUPABASE_URL).includes('YAHAN') && !String(CONFIG.SUPABASE_ANON_KEY).includes('YAHAN');
+export const configured = !String(CONFIG.SUPABASE_URL).includes('YOUR_') && !String(CONFIG.SUPABASE_ANON_KEY).includes('YOUR_');
 export const libLoaded = typeof window !== 'undefined' && !!window.supabase;
 
 export const sb = (configured && libLoaded)

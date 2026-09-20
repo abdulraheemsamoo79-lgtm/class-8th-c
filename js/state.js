@@ -16,5 +16,5 @@ export function resetState() {
   state.homework = []; state.profiles = null; state.loaded = false; state.lastLoad = 0;
 }
 
-// Data badalne ke baad screen dobara draw karwane ke liye
+// Ask the app to redraw the screen after data changes
 export const emitChange = () => document.dispatchEvent(new CustomEvent('app:changed'));

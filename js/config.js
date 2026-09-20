@@ -1,15 +1,15 @@
 // =====================================================
-//  SIRF YAHAN BADLO
-//  Supabase > Project Settings > API se ye 2 cheezein copy karo
+//  EDIT ONLY THIS FILE
+//  Copy these 2 values from Supabase > Project Settings > API
 // =====================================================
 export const CONFIG = {
   SUPABASE_URL: "https://xhvlcjwyvolfeimubsmx.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhodmxjand5dm9sZmVpbXVic214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NzI4ODMsImV4cCI6MjEwNTQ0ODg4M30.nCGpSae48Gkng5Tsfi5cpedILwV2R4Qppy0vjHj6y9U",
 
   APP_NAME: "Class 8-C Notes",
-  SCHOOL: "GOVERNMENT BOYS HIGH SCHOOL (NEW SAEEDABD)",
+  SCHOOL: "GOVERNMENT BOYS HIGH SCHOOL (NEW SAEEDABAD)",
 
-  // Subjects ki list (naam aur rang badal sakte ho)
+  // List of subjects (you can change the names and colours)
   SUBJECTS: [
     { name: "Math",      color: "#2563eb" },
     { name: "Science",   color: "#16a34a" },

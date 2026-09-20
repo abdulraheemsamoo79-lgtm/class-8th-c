@@ -17,21 +17,21 @@ export function renderTop(view) {
 
   view.innerHTML = `
     <h2 class="page-title">🏆 Top Contributors</h2>
-    <p class="page-sub">Jinhon ne sabse zyada pages upload kiye.</p>
+    <p class="page-sub">People who uploaded the most pages.</p>
     <div class="stats">
       <div class="stat"><b>${state.pages.length}</b><small>Total pages</small></div>
       <div class="stat"><b>${map.size}</b><small>Contributors</small></div>
-      <div class="stat"><b>${state.pages.filter(p => p.user_id === state.user.id).length}</b><small>Aapke pages</small></div>
-      <div class="stat"><b>${state.favs.size}</b><small>Aapki favourites</small></div>
+      <div class="stat"><b>${state.pages.filter(p => p.user_id === state.user.id).length}</b><small>Your pages</small></div>
+      <div class="stat"><b>${state.favs.size}</b><small>Your favourites</small></div>
     </div>
     <div class="list">${rank.length ? rank.map((r, i) => `
       <div class="item ${i === 0 ? 'first' : ''}">
         <div class="rank">${medal(i)}</div>
         <div class="avatar">${esc(initials(r.name))}</div>
-        <div class="grow"><b>${esc(r.name)}${r.me ? '<span class="badge ok">Aap</span>' : ''}${i === 0 ? '<span class="badge admin">Top Contributor</span>' : ''}</b>
-        <small>${r.n} page${r.n > 1 ? 's' : ''} upload kiye</small></div>
-      </div>`).join('') : `<div class="empty"><h3>Abhi koi upload nahi</h3><p>Pehle contributor aap ban sakte ho!</p><a class="btn" href="#/">Upload karo</a></div>`}</div>
-    <h3 class="section-title">Subject-wise pages</h3>
+        <div class="grow"><b>${esc(r.name)}${r.me ? '<span class="badge ok">You</span>' : ''}${i === 0 ? '<span class="badge admin">Top Contributor</span>' : ''}</b>
+        <small>${r.n} page${r.n > 1 ? 's' : ''} uploaded</small></div>
+      </div>`).join('') : `<div class="empty"><h3>No uploads yet</h3><p>You could be the first contributor!</p><a class="btn" href="#/">Upload</a></div>`}</div>
+    <h3 class="section-title">Pages by subject</h3>
     <div class="bars">${CONFIG.SUBJECTS.map(s => `
       <div class="bar-row"><span>${esc(s.name)}</span><div class="bar-track"><div class="bar-fill" style="--c:${s.color};width:${((sc[s.name] || 0) / max) * 100}%"></div></div><span>${sc[s.name] || 0}</span></div>`).join('')}</div>`;
 }

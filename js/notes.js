@@ -27,7 +27,7 @@ function hwBanner() {
   const t = todayStr(), end = addDays(t, 7);
   const n = state.homework.filter(h => h.due_date >= t && h.due_date <= end).length;
   if (!n) return '';
-  return `<a class="banner" href="#/homework"><span>📝 <b>${n}</b> homework is hafte ka baaki hai</span><span>Dekho ›</span></a>`;
+  return `<a class="banner" href="#/homework"><span>📝 <b>${n}</b> homework due this week</span><span>View ›</span></a>`;
 }
 
 export function renderNotes(view) {
@@ -35,17 +35,17 @@ export function renderNotes(view) {
     ${hwBanner()}
     <nav class="chips" id="chips" aria-label="Subjects"></nav>
     <section class="filters">
-      <input class="field" id="search" type="search" placeholder="Search: chapter ya student ka naam" value="${esc(F.q)}">
+      <input class="field" id="search" type="search" placeholder="Search: chapter or student name" value="${esc(F.q)}">
       <select class="select" id="chSel" aria-label="Chapter"></select>
-      <select class="select" id="sortSel" aria-label="Tarteeb">
-        <option value="new">Naye pehle</option><option value="old">Purane pehle</option><option value="date">Copy ki date</option>
+      <select class="select" id="sortSel" aria-label="Sort by">
+        <option value="new">Newest first</option><option value="old">Oldest first</option><option value="date">Notebook date</option>
       </select>
     </section>
     <div class="toolbar">
       <div><h2 id="ttl"></h2><span class="count" id="cnt"></span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost sm" id="mineBtn">Meri uploads</button>
-        <button class="btn ghost sm" id="zipBtn">⬇ Sab download (ZIP)</button>
+        <button class="btn ghost sm" id="mineBtn">My uploads</button>
+        <button class="btn ghost sm" id="zipBtn">⬇ Download all (ZIP)</button>
       </div>
     </div>
     <section id="grid" class="grid"></section>`;
@@ -56,7 +56,7 @@ export function renderNotes(view) {
 
   const drawChips = () => {
     const counts = {}; state.pages.forEach(p => counts[p.subject] = (counts[p.subject] || 0) + 1);
-    const all = [{ name: 'All', label: 'Sab', color: '#14213d' }, ...CONFIG.SUBJECTS.map(s => ({ ...s, label: s.name }))];
+    const all = [{ name: 'All', label: 'All', color: '#14213d' }, ...CONFIG.SUBJECTS.map(s => ({ ...s, label: s.name }))];
     $('#chips').innerHTML = all.map(s => {
       const n = s.name === 'All' ? state.pages.length : (counts[s.name] || 0);
       return `<button class="chip ${F.subject === s.name ? 'active' : ''}" data-s="${esc(s.name)}" style="--c:${s.color}"><i></i>${esc(s.label)} <small>${n}</small></button>`;
@@ -69,21 +69,21 @@ export function renderNotes(view) {
   const drawChapters = () => {
     const set = [...new Set(baseList().map(p => p.chapter))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     if (F.chapter && !set.includes(F.chapter)) F.chapter = '';
-    $('#chSel').innerHTML = `<option value="">Sab chapters</option>` + set.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    $('#chSel').innerHTML = `<option value="">All chapters</option>` + set.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
     $('#chSel').value = F.chapter;
   };
 
   let shown = [];
   const drawGrid = () => {
     shown = applyFilters();
-    $('#ttl').textContent = F.subject === 'All' ? 'Sab pages' : F.subject;
+    $('#ttl').textContent = F.subject === 'All' ? 'All pages' : F.subject;
     $('#cnt').textContent = `${shown.length} page${shown.length === 1 ? '' : 's'}`;
     $('#zipBtn').hidden = !shown.length;
     if (!shown.length) {
       const none = !state.pages.length;
-      $('#grid').innerHTML = `<div class="empty"><h3>${none ? 'Abhi koi page nahi' : 'Kuch nahi mila'}</h3>
-        <p>${none ? 'Sabse pehle apni copy ke pages upload karo.' : 'Search ya filter badal ke dekho.'}</p>
-        <button class="btn" id="emUp">＋ Pages upload karo</button></div>`;
+      $('#grid').innerHTML = `<div class="empty"><h3>${none ? 'No pages yet' : 'Nothing found'}</h3>
+        <p>${none ? 'Be the first to upload your notebook pages.' : 'Try changing your search or filters.'}</p>
+        <button class="btn" id="emUp">＋ Upload pages</button></div>`;
       $('#emUp').onclick = () => openUpload();
       $('#grid').onclick = null;
       return;
@@ -104,36 +104,36 @@ export function renderNotes(view) {
 /* ---------- ZIP ---------- */
 async function zipDownload(list, btn) {
   if (!list.length) return;
-  if (!window.JSZip) return toast('ZIP tool load nahi hua, page refresh karo', 'err');
+  if (!window.JSZip) return toast('ZIP tool did not load, please refresh the page', 'err');
   if (list.length > 60) {
     const { ask } = await import('./utils.js');
-    const ok = await ask({ title: `${list.length} photos hain`, message: 'ZIP banne mein thoda time lag sakta hai. Jaari rakhein?', ok: 'Haan, banao' });
+    const ok = await ask({ title: `${list.length} photos`, message: 'Creating the ZIP may take a while. Continue?', ok: 'Yes, create it' });
     if (!ok) return;
   }
   const label = btn.textContent; btn.disabled = true;
   try {
     const zip = new window.JSZip();
     for (let i = 0; i < list.length; i++) {
-      btn.textContent = `Ban raha hai ${i + 1}/${list.length}…`;
+      btn.textContent = `Creating ${i + 1}/${list.length}…`;
       zip.file(fileNameFor(list[i], String(i + 1).padStart(3, '0')), await blobOf(list[i].url));
     }
-    btn.textContent = 'ZIP ban rahi hai…';
+    btn.textContent = 'Finalising ZIP…';
     const out = await zip.generateAsync({ type: 'blob' });
-    saveBlob(out, `${safeName(CONFIG.APP_NAME)}_${F.subject === 'All' ? 'sab' : safeName(F.subject)}.zip`);
-    toast('ZIP download ho gayi ✓');
-  } catch { toast('ZIP nahi ban saki, dobara try karo', 'err'); }
+    saveBlob(out, `${safeName(CONFIG.APP_NAME)}_${F.subject === 'All' ? 'all' : safeName(F.subject)}.zip`);
+    toast('ZIP downloaded ✓');
+  } catch { toast('Could not create the ZIP, please try again', 'err'); }
   btn.disabled = false; btn.textContent = label;
 }
 
 /* ---------- Favourites view ---------- */
 export function renderFavs(view) {
   const list = state.pages.filter(p => state.favs.has(p.id));
-  view.innerHTML = `<h2 class="page-title">♥ Meri favourites</h2>
-    <p class="page-sub">Jo pages aapne save kiye hain, wo yahan milenge.</p>
+  view.innerHTML = `<h2 class="page-title">♥ My favourites</h2>
+    <p class="page-sub">Pages you saved appear here.</p>
     <section id="grid" class="grid"></section>`;
   const grid = view.querySelector('#grid');
   if (!list.length) {
-    grid.innerHTML = `<div class="empty"><h3>Abhi kuch save nahi</h3><p>Kisi bhi page par ♡ dabao, wo yahan aa jayega.</p><a class="btn" href="#/">Notes dekho</a></div>`;
+    grid.innerHTML = `<div class="empty"><h3>Nothing saved yet</h3><p>Tap ♡ on any page and it will show up here.</p><a class="btn" href="#/">Browse notes</a></div>`;
     return;
   }
   grid.innerHTML = list.map(cardHTML).join('');
@@ -144,20 +144,20 @@ export function renderFavs(view) {
 export function openUpload() {
   const today = todayStr();
   const s = sheet(`
-    <h2>Copy ke pages upload karo</h2>
+    <h2>Upload notebook pages</h2>
     <div class="row"><label for="uSub">Subject</label>
       <select class="select" id="uSub">${CONFIG.SUBJECTS.map(x => `<option>${esc(x.name)}</option>`).join('')}</select></div>
     <div class="row"><label for="uCh">Chapter / Topic</label>
-      <input class="field" id="uCh" list="chList" maxlength="80" placeholder="Jaise: Chapter 5 – Cells" autocomplete="off">
+      <input class="field" id="uCh" list="chList" maxlength="80" placeholder="e.g. Chapter 5 – Cells" autocomplete="off">
       <datalist id="chList"></datalist></div>
-    <div class="row"><label for="uDate">Copy ki date</label><input class="field" id="uDate" type="date" value="${today}" max="${today}"></div>
-    <div class="row"><label>Photos (ek saath kai chun sakte ho)</label>
-      <label class="drop" for="uFiles" id="uDrop">📷 Yahan tap karke photos chuno</label>
+    <div class="row"><label for="uDate">Notebook date</label><input class="field" id="uDate" type="date" value="${today}" max="${today}"></div>
+    <div class="row"><label>Photos (you can pick many at once)</label>
+      <label class="drop" for="uFiles" id="uDrop">📷 Tap here to choose photos</label>
       <input id="uFiles" type="file" accept="image/*" multiple hidden>
       <div class="previews" id="uPrev"></div></div>
     <div class="progress" id="uProg"><div id="uBar"></div></div>
     <div class="err" id="uErr" role="alert"></div>
-    <div class="sheet-actions"><button class="btn ghost" id="uNo">Band karo</button><button class="btn" id="uGo">Upload karo</button></div>`);
+    <div class="sheet-actions"><button class="btn ghost" id="uNo">Close</button><button class="btn" id="uGo">Upload</button></div>`);
   const q = x => s.el.querySelector(x);
   let files = [];
 
@@ -172,7 +172,7 @@ export function openUpload() {
 
   q('#uFiles').onchange = e => {
     files = [...e.target.files].filter(f => f.type.startsWith('image/'));
-    q('#uDrop').textContent = files.length ? `📷 ${files.length} photo chuni gayi (badalne ke liye tap karo)` : '📷 Yahan tap karke photos chuno';
+    q('#uDrop').textContent = files.length ? `📷 ${files.length} photo(s) selected (tap to change)` : '📷 Tap here to choose photos';
     q('#uPrev').innerHTML = '';
     files.slice(0, 8).forEach(f => {
       const im = document.createElement('img'); im.alt = '';
@@ -185,10 +185,10 @@ export function openUpload() {
   q('#uGo').onclick = async () => {
     const err = m => q('#uErr').textContent = m; err('');
     const subject = q('#uSub').value, chapter = q('#uCh').value.trim(), date = q('#uDate').value;
-    if (!chapter) return err('Chapter ya topic ka naam likho.');
-    if (!date) return err('Date chuno.');
-    if (!files.length) return err('Kam az kam ek photo chuno.');
-    if (files.length > CONFIG.MAX_PHOTOS_PER_UPLOAD) return err(`Ek baar mein ${CONFIG.MAX_PHOTOS_PER_UPLOAD} se zyada photos nahi.`);
+    if (!chapter) return err('Enter a chapter or topic name.');
+    if (!date) return err('Choose a date.');
+    if (!files.length) return err('Choose at least one photo.');
+    if (files.length > CONFIG.MAX_PHOTOS_PER_UPLOAD) return err(`You can upload at most ${CONFIG.MAX_PHOTOS_PER_UPLOAD} photos at once.`);
     const go = q('#uGo'); go.disabled = true; q('#uNo').disabled = true; q('#uProg').style.display = 'block';
     let ok = 0, fail = 0, lastErr = null;
     for (let i = 0; i < files.length; i++) {
@@ -200,10 +200,10 @@ export function openUpload() {
     if (ok) {
       F.subject = subject; F.chapter = '';
       s.close();
-      toast(fail ? `${ok} upload hui, ${fail} nahi hui` : `${ok} page${ok > 1 ? 's' : ''} upload ho gaye ✓`);
+      toast(fail ? `${ok} uploaded, ${fail} failed` : `${ok} page${ok > 1 ? 's' : ''} uploaded ✓`);
       emitChange();
     } else {
-      go.disabled = false; q('#uNo').disabled = false; go.textContent = 'Upload karo'; q('#uProg').style.display = 'none';
+      go.disabled = false; q('#uNo').disabled = false; go.textContent = 'Upload'; q('#uProg').style.display = 'none';
       err(friendlyError(lastErr));
     }
   };

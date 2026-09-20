@@ -33,7 +33,7 @@ const ROUTES = {
   '/homework': { icon: '📝', label: 'Homework', fn: renderHomework },
   '/favourites': { icon: '♥', label: 'Saved', fn: renderFavs },
   '/top': { icon: '🏆', label: 'Top', fn: renderTop },
-  '/me': { icon: '👤', label: 'Mera', fn: renderProfile },
+  '/me': { icon: '👤', label: 'Me', fn: renderProfile },
   '/admin': { icon: '🛡', label: 'Admin', fn: renderAdmin, admin: true }
 };
 
@@ -66,7 +66,7 @@ async function refresh(silent) {
   if (!state.user) return;
   try {
     await loadAll(); state.lastLoad = Date.now(); state.loaded = true;
-    if (!silent) toast('Naye pages load ho gaye ✓');
+    if (!silent) toast('Latest pages loaded ✓');
     route();
   } catch (e) { if (!silent) toast(friendlyError(e), 'err'); }
 }
@@ -80,8 +80,8 @@ async function route() {
 
   if (!configured || !libLoaded) {
     document.body.classList.add('auth-mode');
-    view.innerHTML = `<div class="auth"><div class="auth-card"><div class="logo">🔧</div><h1>Setup baaki hai</h1>
-      <p class="muted sub">${!libLoaded ? 'Internet ya Supabase library load nahi hui. Page refresh karo.' : 'js/config.js mein SUPABASE_URL aur SUPABASE_ANON_KEY daalo, phir dobara deploy karo.'}</p></div></div>`;
+    view.innerHTML = `<div class="auth"><div class="auth-card"><div class="logo">🔧</div><h1>Setup incomplete</h1>
+      <p class="muted sub">${!libLoaded ? 'The Supabase library did not load. Check your internet and refresh the page.' : 'Add SUPABASE_URL and SUPABASE_ANON_KEY in js/config.js, then deploy again.'}</p></div></div>`;
     return;
   }
 
@@ -93,12 +93,12 @@ async function route() {
 
   document.body.classList.remove('auth-mode');
   if (!state.loaded) {
-    view.innerHTML = splash('Notes load ho rahe hain…');
+    view.innerHTML = splash('Loading notes…');
     try { await ensureLoaded(); }
     catch (e) {
       if (my !== token) return;
-      if (String(e?.message) === 'NO_PROFILE') renderProblem(view, 'Profile nahi mila', 'Aapka account poora nahi bana. Logout karke dobara signup karo ya admin se poochho.');
-      else renderProblem(view, 'Load nahi hua', friendlyError(e));
+      if (String(e?.message) === 'NO_PROFILE') renderProblem(view, 'Profile not found', 'Your account was not set up completely. Log out and sign up again, or ask the admin.');
+      else renderProblem(view, 'Could not load', friendlyError(e));
       return;
     }
     if (my !== token) return;
@@ -115,7 +115,7 @@ async function route() {
   window.scrollTo(0, 0);
 }
 
-/* Data badalne par sirf dobara draw (scroll wahin rakho) */
+/* Redraw after data changes (keep the scroll position) */
 async function redraw() {
   const y = window.scrollY;
   await route();

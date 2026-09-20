@@ -13,7 +13,7 @@ export function cardHTML(p, i) {
   const fav = state.favs.has(p.id);
   return `
   <article class="card">
-    <button class="thumb" data-open="${i}" aria-label="${esc(p.chapter)} kholo">
+    <button class="thumb" data-open="${i}" aria-label="Open ${esc(p.chapter)}">
       <img loading="lazy" src="${esc(p.url)}" alt="${esc(p.subject)} - ${esc(p.chapter)}">
       <span class="tag" style="--c:${colorOf(p.subject)}">${esc(p.subject)}</span>
     </button>
@@ -29,8 +29,8 @@ export function cardHTML(p, i) {
 
 /* ---------- Actions ---------- */
 export async function downloadOne(p) {
-  try { saveBlob(await blobOf(p.url), fileNameFor(p)); toast('Download ho gaya ✓'); }
-  catch { window.open(p.url, '_blank'); toast('Photo naye tab mein khuli, wahan se save karo'); }
+  try { saveBlob(await blobOf(p.url), fileNameFor(p)); toast('Downloaded ✓'); }
+  catch { window.open(p.url, '_blank'); toast('Photo opened in a new tab, save it from there'); }
 }
 
 export function syncHearts() {
@@ -48,26 +48,26 @@ export async function favAction(id) {
   try {
     const on = await toggleFav(id);
     syncHearts();
-    toast(on ? 'Favourites mein save ho gaya ♥' : 'Favourites se hata diya');
+    toast(on ? 'Saved to favourites ♥' : 'Removed from favourites');
     return true;
   } catch (e) { toast(friendlyError(e), 'err'); return false; }
 }
 
 export async function reportAction(p) {
   const reason = await ask({
-    title: 'Is page ko report karein?',
-    message: 'Agar photo blur, galat ya faltu hai to admin ko batao.',
-    ok: 'Report bhejo', input: { label: 'Wajah', placeholder: 'Jaise: photo blur hai', required: true, multiline: true, max: 200 }
+    title: 'Report this page?',
+    message: 'If the photo is blurry, wrong or irrelevant, let the admin know.',
+    ok: 'Send report', input: { label: 'Reason', placeholder: 'e.g. The photo is blurry', required: true, multiline: true, max: 200 }
   });
   if (reason === null) return;
-  try { await reportPage(p.id, reason); toast('Report bhej di, shukriya ✓'); }
-  catch (e) { toast(e?.code === '23505' ? 'Aap is page ko pehle hi report kar chuke ho' : friendlyError(e), 'err'); }
+  try { await reportPage(p.id, reason); toast('Report sent, thank you ✓'); }
+  catch (e) { toast(e?.code === '23505' ? 'You have already reported this page' : friendlyError(e), 'err'); }
 }
 
 export async function deleteAction(p) {
-  const ok = await ask({ title: 'Ye page delete karein?', message: 'Ye hamesha ke liye hat jayega.', ok: 'Delete karo', danger: true });
+  const ok = await ask({ title: 'Delete this page?', message: 'This will be removed permanently.', ok: 'Delete', danger: true });
   if (!ok) return false;
-  try { await deletePage(p); toast('Delete ho gaya'); return true; }
+  try { await deletePage(p); toast('Deleted'); return true; }
   catch (e) { toast(friendlyError(e), 'err'); return false; }
 }
 
@@ -97,13 +97,13 @@ function ensureLb() {
   lb.innerHTML = `
     <div class="lb-top">
       <div><b id="lbTitle"></b><small id="lbSub"></small></div>
-      <button class="icon-btn" id="lbClose" aria-label="Band karo">✕</button>
+      <button class="icon-btn" id="lbClose" aria-label="Close">✕</button>
     </div>
-    <div class="lb-stage" id="lbStage"><img id="lbImg" alt="Copy ka page"></div>
+    <div class="lb-stage" id="lbStage"><img id="lbImg" alt="Notebook page"></div>
     <div class="lb-bar">
-      <button class="btn" id="lbPrev" aria-label="Pichla">‹</button>
+      <button class="btn" id="lbPrev" aria-label="Previous">‹</button>
       <span id="lbPos"></span>
-      <button class="btn" id="lbNext" aria-label="Agla">›</button>
+      <button class="btn" id="lbNext" aria-label="Next">›</button>
       <button class="btn dl" id="lbDl">⬇ Download</button>
       <button class="btn" id="lbFav">♡ Save</button>
       <button class="btn" id="lbRep" title="Report">🚩</button>

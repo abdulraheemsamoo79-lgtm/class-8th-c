@@ -1,19 +1,19 @@
 -- =====================================================================
 --  CLASS NOTES HUB  -  Supabase setup
---  Supabase > SQL Editor > New query > ye poora paste karo > RUN
---  (Dobara run karna safe hai, kuch nahi bigadta)
+--  Supabase > SQL Editor > New query > paste this whole file > RUN
+--  (Running it again is safe, nothing breaks)
 -- =====================================================================
 
--- ---------- 1. Settings (class code yahan rehta hai, students isay dekh nahi sakte)
+-- ---------- 1. Settings (the class code lives here, students cannot read it)
 create table if not exists public.app_settings (
   key   text primary key,
   value text not null
 );
 insert into public.app_settings (key, value) values ('class_code', '8c2026')
 on conflict (key) do nothing;
-alter table public.app_settings enable row level security;   -- koi policy nahi = client access band
+alter table public.app_settings enable row level security;   -- no policy = no client access
 
--- ---------- 2. Profiles (har student ka record)
+-- ---------- 2. Profiles (one record per student)
 create table if not exists public.profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   full_name  text not null,
@@ -35,14 +35,14 @@ returns boolean language sql security definer stable set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and banned = false);
 $$;
 
--- ---------- 4. Signup par class code check + profile banana
+-- ---------- 4. Check the class code on signup + create the profile
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare code text;
 begin
   select value into code from public.app_settings where key = 'class_code';
   if lower(coalesce(new.raw_user_meta_data->>'class_code','')) <> lower(coalesce(code,'')) then
-    raise exception 'Class code galat hai';
+    raise exception 'Wrong class code';
   end if;
   insert into public.profiles (id, full_name)
   values (new.id, coalesce(nullif(trim(new.raw_user_meta_data->>'full_name'), ''), 'Student'));
@@ -55,7 +55,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Signup se pehle friendly error dene ke liye
+-- Lets the app show a friendly error before signup
 create or replace function public.check_class_code(p_code text)
 returns boolean language sql security definer stable set search_path = public as $$
   select exists (select 1 from public.app_settings
@@ -63,17 +63,17 @@ returns boolean language sql security definer stable set search_path = public as
 $$;
 grant execute on function public.check_class_code(text) to anon, authenticated;
 
--- Apna naam badalna
+-- Change your own name
 create or replace function public.update_my_name(p_name text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_active() then raise exception 'Account block hai'; end if;
-  if length(trim(coalesce(p_name,''))) < 2 then raise exception 'Naam bahut chhota hai'; end if;
+  if not public.is_active() then raise exception 'Your account is blocked'; end if;
+  if length(trim(coalesce(p_name,''))) < 2 then raise exception 'Name is too short'; end if;
   update public.profiles set full_name = left(trim(p_name), 40) where id = auth.uid();
 end;
 $$;
 
--- ---------- 5. Pages (copy ki photos)
+-- ---------- 5. Pages (notebook photos)
 create table if not exists public.pages (
   id         uuid primary key default gen_random_uuid(),
   user_id    uuid references public.profiles(id) on delete set null default auth.uid(),
@@ -168,7 +168,7 @@ create policy "hw insert" on public.homework for insert to authenticated
 create policy "hw delete" on public.homework for delete to authenticated
   using ((created_by = auth.uid() and public.is_active()) or public.is_admin());
 
--- ---------- 10. Photos ka storage
+-- ---------- 10. Photo storage
 insert into storage.buckets (id, name, public)
 values ('notes', 'notes', true)
 on conflict (id) do nothing;
@@ -183,13 +183,13 @@ create policy "notes insert" on storage.objects for insert to authenticated
 create policy "notes delete" on storage.objects for delete to authenticated
   using (bucket_id = 'notes' and (public.is_admin() or (storage.foldername(name))[1] = auth.uid()::text));
 
--- ---------- 11. Admin ke functions (sirf admin chala sakta hai)
+-- ---------- 11. Admin functions (only admins can run these)
 create or replace function public.admin_list_users()
 returns table (id uuid, full_name text, email text, role text, banned boolean,
                ban_reason text, created_at timestamptz, pages_count bigint)
 language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
   return query
     select p.id, p.full_name, u.email::text, p.role, p.banned, p.ban_reason, p.created_at,
            (select count(*) from public.pages g where g.user_id = p.id)
@@ -202,10 +202,10 @@ $$;
 create or replace function public.admin_set_ban(p_target uuid, p_ban boolean, p_reason text default null)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
-  if p_target = auth.uid() then raise exception 'Apne aap ko ban nahi kar sakte'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
+  if p_target = auth.uid() then raise exception 'You cannot block yourself'; end if;
   if p_ban and exists (select 1 from public.profiles where id = p_target and role = 'admin') then
-    raise exception 'Pehle is admin ko student banao, phir ban karo';
+    raise exception 'Make this admin a student first, then block';
   end if;
   update public.profiles
      set banned = p_ban, ban_reason = case when p_ban then nullif(trim(p_reason), '') else null end
@@ -216,9 +216,9 @@ $$;
 create or replace function public.admin_set_role(p_target uuid, p_role text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
-  if p_role not in ('student','admin') then raise exception 'Role galat hai'; end if;
-  if p_target = auth.uid() then raise exception 'Apna role khud nahi badal sakte'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
+  if p_role not in ('student','admin') then raise exception 'Invalid role'; end if;
+  if p_target = auth.uid() then raise exception 'You cannot change your own role'; end if;
   update public.profiles set role = p_role where id = p_target;
 end;
 $$;
@@ -226,8 +226,8 @@ $$;
 create or replace function public.admin_delete_user(p_target uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
-  if p_target = auth.uid() then raise exception 'Apna account yahan se delete nahi kar sakte'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
+  if p_target = auth.uid() then raise exception 'You cannot delete your own account here'; end if;
   delete from auth.users where id = p_target;
 end;
 $$;
@@ -236,7 +236,7 @@ create or replace function public.admin_get_class_code()
 returns text language plpgsql security definer set search_path = public as $$
 declare c text;
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
   select value into c from public.app_settings where key = 'class_code';
   return c;
 end;
@@ -245,8 +245,8 @@ $$;
 create or replace function public.admin_set_class_code(p_code text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not public.is_admin() then raise exception 'Sirf admin ye kar sakta hai'; end if;
-  if length(trim(coalesce(p_code,''))) < 4 then raise exception 'Code kam az kam 4 characters ka ho'; end if;
+  if not public.is_admin() then raise exception 'Only an admin can do this'; end if;
+  if length(trim(coalesce(p_code,''))) < 4 then raise exception 'Code must be at least 4 characters'; end if;
   update public.app_settings set value = trim(p_code) where key = 'class_code';
 end;
 $$;
@@ -267,9 +267,9 @@ grant execute on function public.admin_set_class_code(text)           to authent
 grant execute on function public.update_my_name(text)                 to authenticated;
 
 -- =====================================================================
---  AKHRI STEP (sirf ek baar): apne aap ko ADMIN banao
---  1. Pehle website par apne email se Sign up karo
---  2. Phir ye query chalao (email apna likho):
+--  LAST STEP (only once): make yourself ADMIN
+--  1. First sign up on the website with your email
+--  2. Then run this query (write your own email):
 --
 --  update public.profiles set role = 'admin'
 --  where id = (select id from auth.users where email = 'aapka@email.com');

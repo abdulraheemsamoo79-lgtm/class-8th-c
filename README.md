@@ -1,53 +1,53 @@
 # 📓 Class Notes Hub
 
-Class ke students copy ke pages upload karte hain, baaki sab subject ke andar dekh aur download kar sakte hain.
+Students upload photos of their notebook pages, and everyone else can view and download them, organised by subject.
 
-## Kya kya hai
-- Login / Sign up (class code ke saath, sirf class wale account bana sakte hain)
+## Features
+- Login / Sign up protected by a class code (only your class can create accounts)
 - Subject-wise notes, chapter filter, search, sorting
-- Ek saath 30 photos upload (auto compress), zoom, swipe, download, poori list ZIP mein
-- Favourites (♥), Homework board, Top Contributors, Mera account
-- Report button (galat/blur photo)
-- **Admin panel:** students ko Block/Unblock, Admin banao, uploads delete, reports dekhna, class code badalna
+- Upload up to 30 photos at once (auto-compressed), zoom, swipe, download, or download a whole list as a ZIP
+- Favourites (♥), Homework board, Top Contributors, My account
+- Report button for blurry or wrong photos
+- **Admin panel:** block / unblock students, make admins, delete uploads, review reports, change the class code
 - Dark mode, mobile-first design
 
 ## Folder
 ```
-index.html        website ka dhancha
+index.html        page skeleton
 css/style.css     design
-js/config.js      <- SIRF ISAY BADLNA HAI (Supabase keys, naam, subjects)
-js/*.js           baaki code (auth, notes, admin, homework...)
+js/config.js      <- THE ONLY FILE YOU EDIT (Supabase keys, name, subjects)
+js/*.js           the rest of the code (auth, notes, admin, homework...)
 sql/setup.sql     Supabase database setup
 vercel.json       Vercel settings
 ```
 
-## Setup (20 minute)
+## Setup (about 20 minutes)
 
 ### 1) Supabase (free)
-1. https://supabase.com par account banao, **New project** banao.
-2. **SQL Editor > New query** mein `sql/setup.sql` ka poora content paste karke **Run** karo.
-3. **Authentication > Sign In / Providers > Email** mein **"Confirm email" OFF** kar do (warna har student ko email verify karna padega).
-4. **Project Settings > API** se `Project URL` aur `anon public` key copy karo.
+1. Create an account at https://supabase.com and make a **New project**.
+2. Open **SQL Editor > New query**, paste the whole of `sql/setup.sql` and click **Run**.
+3. Go to **Authentication > Sign In / Providers > Email** and turn **"Confirm email" OFF** (otherwise every student must verify their email).
+4. Go to **Project Settings > API** and copy the `Project URL` and the `anon public` key.
 
-### 2) Keys daalo
-`js/config.js` kholo aur `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_NAME`, `SCHOOL` badlo.
+### 2) Add your keys
+Open `js/config.js` and set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_NAME` and `SCHOOL`.
 
-### 3) Vercel par hosting (free)
-- **Sabse aasan:** https://vercel.com/new par jao, is poore folder ko drag-drop karo (ya GitHub par push karke import karo). Framework: **Other**, Build command khali, Output directory khali. **Deploy** dabao.
-- Link mil jayega, wo class ko bhej do.
+### 3) Host on Vercel (free)
+- Easiest: go to https://vercel.com/new and drag-drop this whole folder (or push it to GitHub and import it). Framework: **Other**, leave Build Command and Output Directory empty, then click **Deploy**.
+- Share the link you get with your class.
 
-### 4) Khud ko Admin banao (sirf ek baar)
-1. Apni website par **Sign up** karo (class code: `8c2026`, baad mein admin panel se badal lena).
-2. Supabase **SQL Editor** mein ye chalao (email apna likho):
+### 4) Make yourself Admin (only once)
+1. **Sign up** on your website (class code: `8c2026`, you can change it later in the admin panel).
+2. In the Supabase **SQL Editor** run this (use your own email):
 ```sql
 update public.profiles set role = 'admin'
-where id = (select id from auth.users where email = 'aapka@email.com');
+where id = (select id from auth.users where email = 'you@email.com');
 ```
-3. Website refresh karo, neeche menu mein **Admin** aa jayega.
+3. Refresh the website. **Admin** now appears in the menu.
 
-## Dhyan rakhne wali baatein
-- `anon` key public hoti hai, ye theek hai. Security database ke rules (RLS) se hoti hai jo `setup.sql` mein hain.
-- Photos ka link public hota hai (jiske paas link ho wo dekh sakta hai), lekin list sirf login walon ko milti hai.
-- Free plan: 1 GB storage. Photos compress hoti hain (~200-300 KB), to hazaaron pages aa jate hain.
-- Agar code ya password leak ho to admin panel > Settings se class code badal do.
-- Local testing ke liye `index.html` ko seedha double-click mat karo (modules file:// par nahi chalte). VS Code ka Live Server ya Vercel deploy use karo.
+## Good to know
+- The `anon` key is public by design. Security comes from the database rules (RLS) in `setup.sql`.
+- Photo links are public (anyone with the link can open the image), but the list of pages is only available to logged-in students.
+- Free plan: 1 GB storage. Photos are compressed to roughly 200-300 KB, so thousands of pages fit.
+- If the class code leaks, change it from Admin panel > Settings.
+- For local testing don't just double-click `index.html` (ES modules don't run from file://). Use VS Code Live Server or deploy to Vercel.
